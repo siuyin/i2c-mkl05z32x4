@@ -35,6 +35,7 @@
 #include "IO_Map.h"
 #include "CI2C1.h"
 #include "Bit1.h"
+#include "SysTick.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +99,8 @@ void CI2C1_OnMasterBlockReceived(LDD_TUserData *UserDataPtr);
 
 
 LDD_TDeviceData* redLED;
+volatile unsigned int tick;
+
 /* END Events */
 
 #ifdef __cplusplus

@@ -8,7 +8,7 @@
 **     Repository  : Kinetis
 **     Datasheet   : KL05P48M48SF1RM, Rev.3, Sep 2012
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 14:44, # CodeGen: 0
+**     Date/Time   : 2020-07-26, 15:36, # CodeGen: 1
 **     Abstract    :
 **
 **     Settings    :
@@ -234,6 +234,7 @@
 /* {Default RTOS Adapter} No RTOS includes */
 #include "CI2C1.h"
 #include "Bit1.h"
+#include "SysTick.h"
 #include "PE_Types.h"
 #include "PE_Error.h"
 #include "PE_Const.h"
@@ -397,6 +398,8 @@ void PE_low_level_init(void)
   /* SMC_PMPROT: ??=0,??=0,AVLP=0,??=0,ALLS=0,??=0,AVLLS=0,??=0 */
   SMC_PMPROT = 0x00U;                  /* Setup Power mode protection register */
   /* Common initialization of the CPU registers */
+  /* SCB_SHPR3: PRI_15=0 */
+  SCB_SHPR3 &= (uint32_t)~(uint32_t)(SCB_SHPR3_PRI_15(0xFF));
   /* PORTA_PCR1: ISF=0,MUX=3 */
   PORTA_PCR1 = (uint32_t)((PORTA_PCR1 & (uint32_t)~(uint32_t)(
                 PORT_PCR_ISF_MASK |
@@ -406,6 +409,10 @@ void PE_low_level_init(void)
                ));
   /* NVIC_IPR1: PRI_6=0 */
   NVIC_IPR1 &= (uint32_t)~(uint32_t)(NVIC_IP_PRI_6(0xFF));
+  /* ### Init_SysTick "SysTick" init code ... */
+  SysTick_Init();
+
+
   __EI();
 }
   /* Flash configuration field */

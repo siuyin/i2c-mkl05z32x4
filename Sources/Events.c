@@ -98,6 +98,10 @@ void CI2C1_OnMasterBlockReceived(LDD_TUserData *UserDataPtr) {
 	//Bit1_NegVal(redLED);
 }
 
+void sysTickISR(void) {
+	tick++;
+}
+
 /* END Events */
 
 #ifdef __cplusplus

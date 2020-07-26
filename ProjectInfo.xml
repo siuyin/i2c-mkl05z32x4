@@ -54,6 +54,7 @@
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/CI2C1.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Cpu.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/PE_LDD.c</PathName>
+      <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/SysTick.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Vectors.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Project_Settings/Startup_Code/startup.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Sources/Events.c</PathName>
@@ -68,6 +69,7 @@
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/PE_Error.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/PE_LDD.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/PE_Types.h</PathName>
+      <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/SysTick.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Sources/Events.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Static_Code/IO_Map/MKL05Z4.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Static_Code/PDD/ADC_PDD.h</PathName>

@@ -7,7 +7,7 @@
 **     Version     : Component 01.016, Driver 01.07, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 14:44, # CodeGen: 0
+**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
 **     Abstract    :
 **          This component encapsulates the internal I2C communication
 **          interface. The implementation of the interface is based
@@ -28,7 +28,9 @@
 **     Settings    :
 **          Component name                                 : CI2C1
 **          I2C channel                                    : I2C0
-**          Interrupt service                              : Disabled
+**          Interrupt service                              : Enabled
+**            Interrupt                                    : INT_I2C0
+**            Interrupt priority                           : medium priority
 **          Settings                                       : 
 **            Mode selection                               : MASTER
 **            MASTER mode                                  : Enabled
@@ -86,7 +88,6 @@
 **         MasterGetBlockSentStatus     - bool CI2C1_MasterGetBlockSentStatus(LDD_TDeviceData *DeviceDataPtr);
 **         MasterReceiveBlock           - LDD_TError CI2C1_MasterReceiveBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData...
 **         MasterGetBlockReceivedStatus - bool CI2C1_MasterGetBlockReceivedStatus(LDD_TDeviceData *DeviceDataPtr);
-**         Main                         - void CI2C1_Main(LDD_TDeviceData *DeviceDataPtr);
 **
 **     Copyright : 1997 - 2015 Freescale Semiconductor, Inc. 
 **     All Rights Reserved.
@@ -173,7 +174,6 @@ extern "C" {
 #define CI2C1_MasterGetBlockSentStatus_METHOD_ENABLED /*!< MasterGetBlockSentStatus method of the component CI2C1 is enabled (generated) */
 #define CI2C1_MasterReceiveBlock_METHOD_ENABLED /*!< MasterReceiveBlock method of the component CI2C1 is enabled (generated) */
 #define CI2C1_MasterGetBlockReceivedStatus_METHOD_ENABLED /*!< MasterGetBlockReceivedStatus method of the component CI2C1 is enabled (generated) */
-#define CI2C1_Main_METHOD_ENABLED      /*!< Main method of the component CI2C1 is enabled (generated) */
 
 /* Events configuration constants - generated for all enabled component's events */
 #define CI2C1_OnMasterBlockSent_EVENT_ENABLED /*!< OnMasterBlockSent event of the component CI2C1 is enabled (generated) */
@@ -349,20 +349,16 @@ bool CI2C1_MasterGetBlockReceivedStatus(LDD_TDeviceData *DeviceDataPtr);
 
 /*
 ** ===================================================================
-**     Method      :  CI2C1_Main (component I2C_LDD)
+**     Method      :  CI2C1_Interrupt (component I2C_LDD)
+**
+**     Description :
+**         The method services the interrupt of the selected peripheral(s)
+**         and eventually invokes event(s) of the component.
+**         This method is internal. It is used by Processor Expert only.
+** ===================================================================
 */
-/*!
-**     @brief
-**         This method is available only for polling mode. If interrupt
-**         service is disabled this method replaces the I2C interrupt
-**         handler. This method should be called if Receive/SendBlock
-**         was invoked before in order to run the reception/transmition.
-**     @param
-**         DeviceDataPtr   - Device data structure
-**                           pointer returned by <Init> method.
-*/
-/* ===================================================================*/
-void CI2C1_Main(LDD_TDeviceData *DeviceDataPtr);
+/* {Default RTOS Adapter} ISR function prototype */
+PE_ISR(CI2C1_Interrupt);
 
 /* END CI2C1. */
 

@@ -7,7 +7,7 @@
 **     Version     : Component 01.016, Driver 01.07, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 14:44, # CodeGen: 0
+**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
 **     Abstract    :
 **          This component encapsulates the internal I2C communication
 **          interface. The implementation of the interface is based
@@ -28,7 +28,9 @@
 **     Settings    :
 **          Component name                                 : CI2C1
 **          I2C channel                                    : I2C0
-**          Interrupt service                              : Disabled
+**          Interrupt service                              : Enabled
+**            Interrupt                                    : INT_I2C0
+**            Interrupt priority                           : medium priority
 **          Settings                                       : 
 **            Mode selection                               : MASTER
 **            MASTER mode                                  : Enabled
@@ -86,7 +88,6 @@
 **         MasterGetBlockSentStatus     - bool CI2C1_MasterGetBlockSentStatus(LDD_TDeviceData *DeviceDataPtr);
 **         MasterReceiveBlock           - LDD_TError CI2C1_MasterReceiveBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData...
 **         MasterGetBlockReceivedStatus - bool CI2C1_MasterGetBlockReceivedStatus(LDD_TDeviceData *DeviceDataPtr);
-**         Main                         - void CI2C1_Main(LDD_TDeviceData *DeviceDataPtr);
 **
 **     Copyright : 1997 - 2015 Freescale Semiconductor, Inc. 
 **     All Rights Reserved.
@@ -182,90 +183,86 @@ typedef CI2C1_TDeviceData *CI2C1_TDeviceDataPtr; /* Pointer to the device data s
 
 /* {Default RTOS Adapter} Static object used for simulation of dynamic driver memory allocation */
 static CI2C1_TDeviceData DeviceDataPrv__DEFAULT_RTOS_ALLOC;
+/* {Default RTOS Adapter} Global variable used for passing a parameter into ISR */
+static CI2C1_TDeviceDataPtr INT_I2C0__DEFAULT_RTOS_ISRPARAM;
 
 #define AVAILABLE_EVENTS_MASK (LDD_I2C_ON_MASTER_BLOCK_SENT | LDD_I2C_ON_MASTER_BLOCK_RECEIVED)
 
-
 /*
 ** ===================================================================
-**     Method      :  CI2C1_Main (component I2C_LDD)
+**     Method      :  CI2C1_Interrupt (component I2C_LDD)
+**
+**     Description :
+**         The method services the interrupt of the selected peripheral(s)
+**         and eventually invokes event(s) of the component.
+**         This method is internal. It is used by Processor Expert only.
+** ===================================================================
 */
-/*!
-**     @brief
-**         This method is available only for polling mode. If interrupt
-**         service is disabled this method replaces the I2C interrupt
-**         handler. This method should be called if Receive/SendBlock
-**         was invoked before in order to run the reception/transmition.
-**     @param
-**         DeviceDataPtr   - Device data structure
-**                           pointer returned by <Init> method.
-*/
-/* ===================================================================*/
-void CI2C1_Main(LDD_TDeviceData *DeviceDataPtr)
+
+PE_ISR(CI2C1_Interrupt)
 {
-  CI2C1_TDeviceDataPtr DeviceDataPrv = (CI2C1_TDeviceDataPtr)DeviceDataPtr;
+  /* {Default RTOS Adapter} ISR parameter is passed through the global variable */
+  CI2C1_TDeviceDataPtr DeviceDataPrv = INT_I2C0__DEFAULT_RTOS_ISRPARAM;
   register uint8_t Status;             /* Temporary variable for status register */
 
-  if ((I2C_PDD_ReadStatusReg(I2C0_BASE_PTR) & I2C_PDD_INTERRUPT_FLAG) != 0x00U) {
-    Status = I2C_PDD_ReadStatusReg(I2C0_BASE_PTR); /* Safe status register */
-    I2C_PDD_ClearInterruptFlags(I2C0_BASE_PTR, (Status)); /* Clear interrupt flag */
-    if (I2C_PDD_GetMasterMode(I2C0_BASE_PTR) == I2C_PDD_MASTER_MODE) { /* Is device in master mode? */
-      if (I2C_PDD_GetTransmitMode(I2C0_BASE_PTR) == I2C_PDD_TX_DIRECTION) { /* Is device in Tx mode? */
-        if ((Status & I2C_PDD_RX_ACKNOWLEDGE) != 0x00U){ /* NACK received? */
-          I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* Switch device to slave mode (stop signal sent) */
-          I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
-          DeviceDataPrv->OutLenM = 0x00U; /* No character for sending */
-          DeviceDataPrv->InpLenM = 0x00U; /* No character for reception */
-          DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* No character for sending or reception */
-        } else {
-          if (DeviceDataPrv->OutLenM != 0x00U) { /* Is any char. for transmitting? */
-            DeviceDataPrv->OutLenM--;  /* Decrease number of chars for the transmit */
-            I2C_PDD_WriteDataReg(I2C0_BASE_PTR, *(DeviceDataPrv->OutPtrM)++); /* Send character */
-          } else {
-            if (DeviceDataPrv->InpLenM != 0x00U) { /* Is any char. for reception? */
-              if (DeviceDataPrv->InpLenM == 0x01U) { /* If only one char to receive */
-                I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_DISABLE); /* then transmit ACK disable */
-              } else {
-                I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_ENABLE); /* else transmit ACK enable */
-              }
-              I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
-              (void)I2C_PDD_ReadDataReg(I2C0_BASE_PTR); /* Dummy read character */
-            } else {
-              DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Clear flag "busy" */
-              if (DeviceDataPrv->SendStop == LDD_I2C_SEND_STOP) {
-                I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* Switch device to slave mode (stop signal sent) */
-                I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
-              }
-              DeviceDataPrv->StatusFlag |= MASTER_BLOCK_SENT; /* Set data block sent flag */
-              CI2C1_OnMasterBlockSent(DeviceDataPrv->UserData); /* Invoke OnMasterBlockSent event */
-            }
-          }
-        }
+  Status = I2C_PDD_ReadStatusReg(I2C0_BASE_PTR); /* Safe status register */
+  I2C_PDD_ClearInterruptFlags(I2C0_BASE_PTR, (Status)); /* Clear interrupt flag */
+  if (I2C_PDD_GetMasterMode(I2C0_BASE_PTR) == I2C_PDD_MASTER_MODE) { /* Is device in master mode? */
+    if (I2C_PDD_GetTransmitMode(I2C0_BASE_PTR) == I2C_PDD_TX_DIRECTION) { /* Is device in Tx mode? */
+      if ((Status & I2C_PDD_RX_ACKNOWLEDGE) != 0x00U){ /* NACK received? */
+        I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* Switch device to slave mode (stop signal sent) */
+        I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
+        DeviceDataPrv->OutLenM = 0x00U; /* No character for sending */
+        DeviceDataPrv->InpLenM = 0x00U; /* No character for reception */
+        DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* No character for sending or reception */
       } else {
-        DeviceDataPrv->InpLenM--;      /* Decrease number of chars for the receive */
-        if (DeviceDataPrv->InpLenM != 0x00U) { /* Is any char. for reception? */
-          if (DeviceDataPrv->InpLenM == 0x01U) {
-            I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_DISABLE); /* Transmit NACK */
-          }
+        if (DeviceDataPrv->OutLenM != 0x00U) { /* Is any char. for transmitting? */
+          DeviceDataPrv->OutLenM--;    /* Decrease number of chars for the transmit */
+          I2C_PDD_WriteDataReg(I2C0_BASE_PTR, *(DeviceDataPrv->OutPtrM)++); /* Send character */
         } else {
-          DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Clear flag "busy" */
-          I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* If no, switch device to slave mode (stop signal sent) */
-          I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_ENABLE); /* Transmit ACK */
-        }
-        *(DeviceDataPrv->InpPtrM)++ = I2C_PDD_ReadDataReg(I2C0_BASE_PTR); /* Receive character */
-        if (DeviceDataPrv->InpLenM == 0x00U) { /* Is any char. for reception? */
-          DeviceDataPrv->StatusFlag |= MASTER_BLOCK_RECEIVED; /* Set data block received flag */
-          CI2C1_OnMasterBlockReceived(DeviceDataPrv->UserData); /* Invoke OnMasterBlockReceived event */
+          if (DeviceDataPrv->InpLenM != 0x00U) { /* Is any char. for reception? */
+            if (DeviceDataPrv->InpLenM == 0x01U) { /* If only one char to receive */
+              I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_DISABLE); /* then transmit ACK disable */
+            } else {
+              I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_ENABLE); /* else transmit ACK enable */
+            }
+            I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
+            (void)I2C_PDD_ReadDataReg(I2C0_BASE_PTR); /* Dummy read character */
+          } else {
+            DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Clear flag "busy" */
+            if (DeviceDataPrv->SendStop == LDD_I2C_SEND_STOP) {
+              I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* Switch device to slave mode (stop signal sent) */
+              I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
+            }
+            DeviceDataPrv->StatusFlag |= MASTER_BLOCK_SENT; /* Set data block sent flag */
+            CI2C1_OnMasterBlockSent(DeviceDataPrv->UserData); /* Invoke OnMasterBlockSent event */
+          }
         }
       }
     } else {
-      if ((Status & I2C_PDD_ARBIT_LOST) != 0x00U) { /* Arbitration lost? */
-        DeviceDataPrv->OutLenM = 0x00U; /* Any character is not for sent */
-        DeviceDataPrv->InpLenM = 0x00U; /* Any character is not for reception */
-        DeviceDataPrv->SendStop = LDD_I2C_SEND_STOP; /* Set variable for sending stop condition (for master mode) */
-        DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Any character is not for sent or reception*/
-        I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
+      DeviceDataPrv->InpLenM--;        /* Decrease number of chars for the receive */
+      if (DeviceDataPrv->InpLenM != 0x00U) { /* Is any char. for reception? */
+        if (DeviceDataPrv->InpLenM == 0x01U) {
+          I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_DISABLE); /* Transmit NACK */
+        }
+      } else {
+        DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Clear flag "busy" */
+        I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_SLAVE_MODE); /* If no, switch device to slave mode (stop signal sent) */
+        I2C_PDD_EnableTransmitAcknowledge(I2C0_BASE_PTR, PDD_ENABLE); /* Transmit ACK */
       }
+      *(DeviceDataPrv->InpPtrM)++ = I2C_PDD_ReadDataReg(I2C0_BASE_PTR); /* Receive character */
+      if (DeviceDataPrv->InpLenM == 0x00U) { /* Is any char. for reception? */
+        DeviceDataPrv->StatusFlag |= MASTER_BLOCK_RECEIVED; /* Set data block received flag */
+        CI2C1_OnMasterBlockReceived(DeviceDataPrv->UserData); /* Invoke OnMasterBlockReceived event */
+      }
+    }
+  } else {
+    if ((Status & I2C_PDD_ARBIT_LOST) != 0x00U) { /* Arbitration lost? */
+      DeviceDataPrv->OutLenM = 0x00U;  /* Any character is not for sent */
+      DeviceDataPrv->InpLenM = 0x00U;  /* Any character is not for reception */
+      DeviceDataPrv->SendStop = LDD_I2C_SEND_STOP; /* Set variable for sending stop condition (for master mode) */
+      DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Any character is not for sent or reception*/
+      I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
     }
   }
 }
@@ -302,6 +299,9 @@ LDD_TDeviceData* CI2C1_Init(LDD_TUserData *UserDataPtr)
 
   DeviceDataPrv->UserData = UserDataPtr; /* Store the RTOS device structure */
 
+  /* Allocate interrupt vector */
+  /* {Default RTOS Adapter} Set interrupt vector: IVT is static, ISR parameter is passed by the global variable */
+  INT_I2C0__DEFAULT_RTOS_ISRPARAM = DeviceDataPrv;
   DeviceDataPrv->SerFlag = 0x00U;      /* Reset all flags */
   DeviceDataPrv->SendStop = LDD_I2C_SEND_STOP; /* Set variable for sending stop condition (for master mode) */
   DeviceDataPrv->InpLenM = 0x00U;      /* Set zero counter of data of reception */
@@ -329,6 +329,14 @@ LDD_TDeviceData* CI2C1_Init(LDD_TUserData *UserDataPtr)
                )) | (uint32_t)(
                 PORT_PCR_MUX(0x02)
                ));
+  /* NVIC_IPR2: PRI_8=0x80 */
+  NVIC_IPR2 = (uint32_t)((NVIC_IPR2 & (uint32_t)~(uint32_t)(
+               NVIC_IP_PRI_8(0x7F)
+              )) | (uint32_t)(
+               NVIC_IP_PRI_8(0x80)
+              ));
+  /* NVIC_ISER: SETENA|=0x0100 */
+  NVIC_ISER |= NVIC_ISER_SETENA(0x0100);
   /* I2C0_C2: GCAEN=0,ADEXT=0,HDRS=0,SBRC=0,RMEN=0,AD=0 */
   I2C0_C2 = I2C_C2_AD(0x00);
   /* I2C0_FLT: SHEN=0,STOPF=0,STOPIE=0,FLT=0 */
@@ -338,6 +346,7 @@ LDD_TDeviceData* CI2C1_Init(LDD_TUserData *UserDataPtr)
   /* I2C0_F: MULT=0,ICR=0x22 */
   I2C0_F = (I2C_F_MULT(0x00) | I2C_F_ICR(0x22)); /* Set prescaler bits */
   I2C_PDD_EnableDevice(I2C0_BASE_PTR, PDD_ENABLE); /* Enable device */
+  I2C_PDD_EnableInterrupt(I2C0_BASE_PTR); /* Enable interrupt */
   /* Registration of the device structure */
   PE_LDD_RegisterDeviceStructure(PE_LDD_COMPONENT_CI2C1_ID,DeviceDataPrv);
   return ((LDD_TDeviceData *)DeviceDataPrv); /* Return pointer to the data data structure */
@@ -407,6 +416,8 @@ LDD_TError CI2C1_MasterSendBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData *Buff
       return ERR_BUSY;                 /* If yes then error */
     }
   }
+  /* {Default RTOS Adapter} Critical section begin, general PE function is used */
+  EnterCritical();
   DeviceDataPrv->SerFlag |= MASTER_IN_PROGRES; /* Set flag "busy" */
   DeviceDataPrv->OutPtrM = (uint8_t *)BufferPtr; /* Save pointer to data for transmitting */
   DeviceDataPrv->OutLenM = Size;       /* Set the counter of output bufer's content */
@@ -418,6 +429,8 @@ LDD_TError CI2C1_MasterSendBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData *Buff
     I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_MASTER_MODE); /* If no then start signal generated */
   }
   I2C_PDD_WriteDataReg(I2C0_BASE_PTR, 0x3AU); /* Send slave address */
+  /* {Default RTOS Adapter} Critical section end, general PE function is used */
+  ExitCritical();
   return ERR_OK;                       /* OK */
 }
 
@@ -445,8 +458,12 @@ bool CI2C1_MasterGetBlockSentStatus(LDD_TDeviceData *DeviceDataPtr)
 {
   uint8_t Status;                      /* Temporary variable for flag saving */
 
+  /* {Default RTOS Adapter} Critical section begin, general PE function is used */
+  EnterCritical();
   Status = ((CI2C1_TDeviceDataPtr)DeviceDataPtr)->StatusFlag; /* Save flag for return */
   ((CI2C1_TDeviceDataPtr)DeviceDataPtr)->StatusFlag &= (uint8_t)(~(uint8_t)MASTER_BLOCK_SENT); /* Clear data block sent flag */
+  /* {Default RTOS Adapter} Critical section end, general PE function is used */
+  ExitCritical();
   return (bool)(((Status & MASTER_BLOCK_SENT) != 0x00U)? TRUE : FALSE); /* Return saved status */
 }
 
@@ -521,6 +538,8 @@ LDD_TError CI2C1_MasterReceiveBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData *B
       return ERR_BUSY;               /* If yes then error */
     }
   }
+  /* {Default RTOS Adapter} Critical section begin, general PE function is used */
+  EnterCritical();
   DeviceDataPrv->SerFlag |= MASTER_IN_PROGRES; /* Set flag "busy" */
   DeviceDataPrv->InpPtrM = (uint8_t *)BufferPtr; /* Save pointer to data for reception */
   DeviceDataPrv->InpLenM = Size;       /* Set the counter of input bufer's content */
@@ -532,6 +551,8 @@ LDD_TError CI2C1_MasterReceiveBlock(LDD_TDeviceData *DeviceDataPtr, LDD_TData *B
     I2C_PDD_SetMasterMode(I2C0_BASE_PTR, I2C_PDD_MASTER_MODE); /* If no then start signal generated */
   }
   I2C_PDD_WriteDataReg(I2C0_BASE_PTR, 0x3BU); /* Send slave address */
+  /* {Default RTOS Adapter} Critical section end, general PE function is used */
+  ExitCritical();
   return ERR_OK;                       /* OK */
 }
 
@@ -558,8 +579,12 @@ bool CI2C1_MasterGetBlockReceivedStatus(LDD_TDeviceData *DeviceDataPtr)
 {
   uint8_t Status;                      /* Temporary variable for flag saving */
 
+  /* {Default RTOS Adapter} Critical section begin, general PE function is used */
+  EnterCritical();
   Status = ((CI2C1_TDeviceDataPtr)DeviceDataPtr)->StatusFlag; /* Save flag for return */
   ((CI2C1_TDeviceDataPtr)DeviceDataPtr)->StatusFlag &= (uint8_t)(~(uint8_t)MASTER_BLOCK_RECEIVED); /* Clear data block received flag */
+  /* {Default RTOS Adapter} Critical section end, general PE function is used */
+  ExitCritical();
   return (bool)(((Status & MASTER_BLOCK_RECEIVED) != 0x00U)? TRUE : FALSE); /* Return saved status */
 }
 

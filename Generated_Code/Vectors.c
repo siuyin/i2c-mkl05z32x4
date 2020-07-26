@@ -6,7 +6,7 @@
 **     Version     : Component 01.000, Driver 01.04, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 14:44, # CodeGen: 0
+**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
 **     Abstract    :
 **
 **     Settings    :
@@ -57,6 +57,7 @@
   #include "Cpu.h"
   #include "CI2C1.h"
   #include "Bit1.h"
+  #include "SysTick.h"
   #include "Events.h"
 
 
@@ -91,7 +92,7 @@
     (tIsrFunc)&Cpu_Interrupt,          /* 0x0C  0x00000030   -   ivINT_Reserved12              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x0D  0x00000034   -   ivINT_Reserved13              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x0E  0x00000038   -   ivINT_PendableSrvReq          unused by PE */
-    (tIsrFunc)&Cpu_Interrupt,          /* 0x0F  0x0000003C   -   ivINT_SysTick                 unused by PE */
+    (tIsrFunc)&sysTickISR,             /* 0x0F  0x0000003C   0   ivINT_SysTick                 used by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x10  0x00000040   -   ivINT_DMA0                    unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x11  0x00000044   -   ivINT_DMA1                    unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x12  0x00000048   -   ivINT_DMA2                    unused by PE */
@@ -100,7 +101,7 @@
     (tIsrFunc)&Cpu_Interrupt,          /* 0x15  0x00000054   -   ivINT_FTFA                    unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x16  0x00000058   -   ivINT_LVD_LVW                 unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x17  0x0000005C   -   ivINT_LLWU                    unused by PE */
-    (tIsrFunc)&Cpu_Interrupt,          /* 0x18  0x00000060   -   ivINT_I2C0                    unused by PE */
+    (tIsrFunc)&CI2C1_Interrupt,        /* 0x18  0x00000060   2   ivINT_I2C0                    used by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x19  0x00000064   -   ivINT_Reserved25              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1A  0x00000068   -   ivINT_SPI0                    unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1B  0x0000006C   -   ivINT_Reserved27              unused by PE */

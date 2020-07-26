@@ -31,12 +31,64 @@
 #include "Events.h"
 #include "CI2C1.h"
 #include "Bit1.h"
+#include "SysTick.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"
 #include "PE_Const.h"
 #include "IO_Map.h"
 /* User includes (#include below this line is not maintained by Processor Expert) */
+
+LDD_TDeviceData* i2c;	// i2c logical device pointer.
+
+// ActivateMMA8451QAccelerometer commands the device into active mode.
+// Returns 0 if successful.
+uint8_t ActivateMMA8451QAccelerometer(void) {
+	const uint8_t addr = 0x1d; // only for documentation, this has already been defined in the Processor Expert Logical Device Driver.
+	uint8_t cmd[2] = { 0x2a, 1 }; // 0x2a is the control register, 1 is to switch to active mode.
+
+	return CI2C1_MasterSendBlock(i2c, cmd, 2, LDD_I2C_SEND_STOP);
+}
+
+int8_t AccelerometerData;
+// ReadAccelerometerTask periodically reads the accelerometer and output the value.
+void ReadAccelerometerTask(void) {
+	static unsigned int nrt;	// next run tick
+	enum stateT {
+		ready, txBusy, txSent, rxBusy
+	};
+	// these are with respect to the i2c master.
+	static enum stateT state;
+	uint8_t reg;
+
+	switch (state) {
+	case ready:
+		if (tick != nrt) {
+			return;
+		}
+		nrt += 200;	// update every x ticks.
+
+		reg = 0x5;	// z-axis most significant byte
+		CI2C1_MasterSendBlock(i2c, &reg, 1, LDD_I2C_NO_SEND_STOP);
+		state = txBusy;
+		break;
+	case txBusy:
+		if (CI2C1_MasterGetBlockSentStatus(i2c)) { // All data sent
+			state = txSent;
+		}
+		break;
+	case txSent:
+		CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1, LDD_I2C_SEND_STOP);
+		state = rxBusy;
+		break;
+	case rxBusy:
+		if (CI2C1_MasterGetBlockReceivedStatus(i2c)) {	// all data received
+			state = ready;
+		}
+		break;
+	}
+	return;
+}
 
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
 int main(void)
@@ -51,30 +103,12 @@ int main(void)
 	/* Write your code here */
 
 	redLED = Bit1_Init(NULL);
-	LDD_TDeviceData* i2c = CI2C1_Init(NULL);
+	i2c = CI2C1_Init(NULL);
 
-	signed char data;
-	byte  err;
-	byte buf[4];
-	buf[0] = 0x2a;
-	buf[1] = 1;
-	err = CI2C1_MasterSendBlock(i2c, buf, 2, LDD_I2C_SEND_STOP); // turn on the device
-	for (int i = 0; i < 1000; i++) {
-		CI2C1_Main(i2c);
-	}
+	ActivateMMA8451QAccelerometer();
 
 	while (1) {
-		buf[0] = 0x5;
-		err = CI2C1_MasterSendBlock(i2c, buf, 1, LDD_I2C_NO_SEND_STOP);
-		for (int i = 0; i < 100; i++) {
-			CI2C1_Main(i2c);
-		}
-		err = CI2C1_MasterReceiveBlock(i2c, &data, 1, LDD_I2C_SEND_STOP);
-		for (int i = 0; i < 100; i++) {
-			CI2C1_Main(i2c);
-		}
-		for (int i = 0; i < 10000; i++) {
-		}
+		ReadAccelerometerTask();
 	}
 
 	/*** Don't write any code pass this line, or it will be deleted during code generation. ***/
