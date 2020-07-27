@@ -48,7 +48,7 @@ LDD_TDeviceData* uart0;
 // Returns 0 if successful.
 uint8_t ActivateMMA8451QAccelerometer(void) {
 	const uint8_t addr = 0x1d; // only for documentation, this has already been defined in the Processor Expert Logical Device Driver.
-	uint8_t cmd[2] = { 0x2a, 1 }; // 0x2a is the control register, 1 is to switch to active mode.
+	uint8_t cmd[2] = { 0x2a, 0x3 }; // 0x2a is the control register, 3 is to switch to active mode and enable fast-read byte only transfers for x,y and z registers.
 
 	return CI2C1_MasterSendBlock(i2c, cmd, 2, LDD_I2C_SEND_STOP);
 }
@@ -61,54 +61,11 @@ void ReadAccelerometerTask(void) {
 	}
 	nrt += 100;	// update every x ticks.
 
-	uint8_t reg = 0x5;	// z-axis most significant byte
+	uint8_t reg = 0x1;	// x-axis most significant byte, then fast-read 0x3 (y) and 0x5 (z) registers
 	CI2C1_MasterSendBlock(i2c, &reg, 1, LDD_I2C_NO_SEND_STOP);
 	while (!CI2C1_MasterGetBlockSentStatus(i2c)) { // wait for data to be sent
 	}
-	CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1, LDD_I2C_SEND_STOP);
-}
-void ReadAccelerometerTaskOld(void) {
-	static unsigned int nrt;	// next run tick
-	enum stateT {
-		ready, txBusy, txSent, rxBusy
-	};
-	// these are with respect to the i2c master.
-	static enum stateT state;
-	static uint8_t reg;
-	LDD_TError err;
-
-	switch (state) {
-	case ready:
-//		if (tick != nrt) {
-//			return;
-//		}
-//		nrt += 100;	// update every x ticks.
-
-		reg = 0x5;	// z-axis most significant byte
-		CI2C1_MasterSendBlock(i2c, &reg, 1, LDD_I2C_NO_SEND_STOP);
-		state = txBusy;
-		break;
-	case txBusy:
-		if (CI2C1_MasterGetBlockSentStatus(i2c)) { // All data sent
-			state = txSent;
-		} else {
-			state = txBusy;
-		}
-		break;
-	case txSent:
-		err = CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1,
-				LDD_I2C_SEND_STOP);
-		state = rxBusy;
-		break;
-	case rxBusy:
-		if (CI2C1_MasterGetBlockReceivedStatus(i2c)) {	// all data received
-			state = ready;
-		} else {
-			state = rxBusy;
-		}
-		break;
-	}
-	return;
+	CI2C1_MasterReceiveBlock(i2c, &(AccelerometerData), 3, LDD_I2C_SEND_STOP);
 }
 
 void OutputSerialTask(void) {
@@ -119,7 +76,8 @@ void OutputSerialTask(void) {
 	nrt += 300;
 
 	static char buf[40];
-	snprintf(buf, 39, "z-axis: %d\r\n", AccelerometerData);
+	snprintf(buf, 39, "(%+4d,%+4d,%+4d)\r\n", AccelerometerData.X,
+			AccelerometerData.Y, AccelerometerData.Z);
 	AS1_SendBlock(uart0, buf, strlen(buf));
 }
 
@@ -149,15 +107,14 @@ int main(void)
 	}
 
 	/*** Don't write any code pass this line, or it will be deleted during code generation. ***/
-	/*** RTOS startup code. Macro PEX_RTOS_START is defined by the RTOS component. DON'T MODIFY THIS CODE!!! ***/
-#ifdef PEX_RTOS_START
-	PEX_RTOS_START(); /* Startup of the selected RTOS. Macro is defined by the RTOS component. */
-#endif
-	/*** End of RTOS startup code.  ***/
-	/*** Processor Expert end of main routine. DON'T MODIFY THIS CODE!!! ***/
-	for (;;) {
-	}
-	/*** Processor Expert end of main routine. DON'T WRITE CODE BELOW!!! ***/
+  /*** RTOS startup code. Macro PEX_RTOS_START is defined by the RTOS component. DON'T MODIFY THIS CODE!!! ***/
+  #ifdef PEX_RTOS_START
+    PEX_RTOS_START();                  /* Startup of the selected RTOS. Macro is defined by the RTOS component. */
+  #endif
+  /*** End of RTOS startup code.  ***/
+  /*** Processor Expert end of main routine. DON'T MODIFY THIS CODE!!! ***/
+  for(;;){}
+  /*** Processor Expert end of main routine. DON'T WRITE CODE BELOW!!! ***/
 } /*** End of main routine. DO NOT MODIFY THIS TEXT!!! ***/
 
 /* END main */

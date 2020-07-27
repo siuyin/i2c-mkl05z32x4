@@ -160,7 +160,7 @@ PE_DEBUGHALT();
           <OnSlaveGeneralCallAddr v="Disabled" />
           <OnSlaveSmBusCallAddr v="Disabled" />
           <OnSlaveSmBusAlertResponse v="Disabled" />
-          <OnError v="Disabled" />
+          <OnError v="Enabled" />
           <OnBusStopDetected v="Disabled" />
         </group>
       </group>
@@ -191,7 +191,7 @@ PE_DEBUGHALT();
       <SelectSlaveDevice v="don&amp;apos;t generate code" />
       <SendAcknowledge v="don&amp;apos;t generate code" />
       <GetError v="don&amp;apos;t generate code" />
-      <CheckBus v="don&amp;apos;t generate code" />
+      <CheckBus v="generate code" />
       <GetStats v="don&amp;apos;t generate code" />
       <ClearStats v="don&amp;apos;t generate code" />
       <Main v="don&amp;apos;t generate code" />
@@ -216,7 +216,9 @@ PE_DEBUGHALT();
       <event name="OnSlaveGeneralCallAddr" v="don&amp;apos;t generate code" />
       <event name="OnSlaveSmBusCallAddr" v="don&amp;apos;t generate code" />
       <event name="OnSlaveSmBusAlertResponse" v="don&amp;apos;t generate code" />
-      <event name="OnError" v="don&amp;apos;t generate code" />
+      <event name="OnError" v="generate code">
+        <Event_procedure_name v="CI2C1_OnError" />
+      </event>
       <event name="OnBusStopDetected" v="don&amp;apos;t generate code" />
     </Events>
   </Bean>

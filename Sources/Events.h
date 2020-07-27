@@ -43,7 +43,13 @@ extern "C" {
 #endif 
 
 LDD_TDeviceData* i2c;	// i2c logical device pointer.
-int8_t AccelerometerData;
+
+struct {
+	int8_t X;
+	int8_t Y;
+	int8_t Z;
+} AccelerometerData;
+//int8_t AccelerometerData;
 
 LDD_TDeviceData* redLED;
 

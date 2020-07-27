@@ -73,7 +73,6 @@ void Cpu_OnNMIINT(void) {
 void CI2C1_OnMasterBlockSent(LDD_TUserData *UserDataPtr) {
 	/* Write your code here ... */
 
-
 }
 
 /*

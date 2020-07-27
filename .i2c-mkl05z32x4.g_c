@@ -314,7 +314,7 @@
     </GenFiles>
     <SignalListFile>Documentation\i2c-mkl05z32x4_SIGNALS.txt</SignalListFile>
     <DestinationCompiler>GNUC</DestinationCompiler>
-    <ProjectModificationStamp>22</ProjectModificationStamp>
+    <ProjectModificationStamp>25</ProjectModificationStamp>
   </Options>
   <CpuID_2>
     <Generated>true</Generated>
@@ -399,8 +399,8 @@
     <GenComponentVersion>01.016</GenComponentVersion>
     <GenDriverVersion>01.07</GenDriverVersion>
     <GenEventModule>Events</GenEventModule>
-    <HeaderAge>1358645787</HeaderAge>
-    <CodeAge>1358645787</CodeAge>
+    <HeaderAge>1358649629</HeaderAge>
+    <CodeAge>1358649629</CodeAge>
     <AsemblAge>-1</AsemblAge>
     <GenNumMethods>33</GenNumMethods>
     <Init>true</Init>
