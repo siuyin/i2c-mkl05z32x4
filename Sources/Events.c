@@ -73,6 +73,7 @@ void Cpu_OnNMIINT(void) {
 void CI2C1_OnMasterBlockSent(LDD_TUserData *UserDataPtr) {
 	/* Write your code here ... */
 
+
 }
 
 /*
@@ -95,11 +96,54 @@ void CI2C1_OnMasterBlockSent(LDD_TUserData *UserDataPtr) {
 /* ===================================================================*/
 void CI2C1_OnMasterBlockReceived(LDD_TUserData *UserDataPtr) {
 	/* Write your code here ... */
-	//Bit1_NegVal(redLED);
+
 }
 
 void sysTickISR(void) {
 	tick++;
+}
+
+/*
+** ===================================================================
+**     Event       :  AS1_OnBlockSent (module Events)
+**
+**     Component   :  AS1 [Serial_LDD]
+*/
+/*!
+**     @brief
+**         This event is called after the last character from the
+**         output buffer is moved to the transmitter. 
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. This pointer is passed
+**                           as the parameter of Init method.
+*/
+/* ===================================================================*/
+void AS1_OnBlockSent(LDD_TUserData *UserDataPtr)
+{
+  /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  CI2C1_OnError (module Events)
+**
+**     Component   :  CI2C1 [I2C_LDD]
+*/
+/*!
+**     @brief
+**         This event is called when an error (e.g. Arbitration lost)
+**         occurs. The errors can be read with GetError method.
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. This pointer is passed
+**                           as the parameter of Init method.
+*/
+/* ===================================================================*/
+void CI2C1_OnError(LDD_TUserData *UserDataPtr)
+{
+  /* Write your code here ... */
+	Bit1_ClrVal(redLED);
 }
 
 /* END Events */

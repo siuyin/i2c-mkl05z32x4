@@ -6,7 +6,7 @@
 **     Version     : Component 01.000, Driver 01.04, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 15:36, # CodeGen: 1
+**     Date/Time   : 2020-07-26, 22:23, # CodeGen: 3
 **     Abstract    :
 **
 **     Settings    :
@@ -64,6 +64,7 @@
 #include "CI2C1.h"
 #include "Bit1.h"
 #include "SysTick.h"
+#include "AS1.h"
 
 
 /*

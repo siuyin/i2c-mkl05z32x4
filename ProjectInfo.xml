@@ -50,6 +50,7 @@
   </PATHS>
   <FILES>
     <GeneratedCs>
+      <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/AS1.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Bit1.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/CI2C1.c</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Cpu.c</PathName>
@@ -61,6 +62,7 @@
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Sources/main.c</PathName>
     </GeneratedCs>
     <GeneratedHs>
+      <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/AS1.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Bit1.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/CI2C1.h</PathName>
       <PathName>/home/siuyin/workspace.kds/i2c-mkl05z32x4/Generated_Code/Cpu.h</PathName>

@@ -25,6 +25,7 @@
 - \subpage CI2C1
 - \subpage Bit1
 - \subpage SysTick
+- \subpage AS1
 
 */
 

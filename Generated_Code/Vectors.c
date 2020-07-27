@@ -6,7 +6,7 @@
 **     Version     : Component 01.000, Driver 01.04, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
+**     Date/Time   : 2020-07-26, 23:52, # CodeGen: 10
 **     Abstract    :
 **
 **     Settings    :
@@ -58,6 +58,7 @@
   #include "CI2C1.h"
   #include "Bit1.h"
   #include "SysTick.h"
+  #include "AS1.h"
   #include "Events.h"
 
 
@@ -105,7 +106,7 @@
     (tIsrFunc)&Cpu_Interrupt,          /* 0x19  0x00000064   -   ivINT_Reserved25              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1A  0x00000068   -   ivINT_SPI0                    unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1B  0x0000006C   -   ivINT_Reserved27              unused by PE */
-    (tIsrFunc)&Cpu_Interrupt,          /* 0x1C  0x00000070   -   ivINT_UART0                   unused by PE */
+    (tIsrFunc)&AS1_Interrupt,          /* 0x1C  0x00000070   3   ivINT_UART0                   used by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1D  0x00000074   -   ivINT_Reserved29              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1E  0x00000078   -   ivINT_Reserved30              unused by PE */
     (tIsrFunc)&Cpu_Interrupt,          /* 0x1F  0x0000007C   -   ivINT_ADC0                    unused by PE */

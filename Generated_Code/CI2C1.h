@@ -7,7 +7,7 @@
 **     Version     : Component 01.016, Driver 01.07, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
+**     Date/Time   : 2020-07-27, 09:16, # CodeGen: 12
 **     Abstract    :
 **          This component encapsulates the internal I2C communication
 **          interface. The implementation of the interface is based
@@ -71,7 +71,7 @@
 **              OnSlaveGeneralCallAddr                     : Disabled
 **              OnSlaveSmBusCallAddr                       : Disabled
 **              OnSlaveSmBusAlertResponse                  : Disabled
-**              OnError                                    : Disabled
+**              OnError                                    : Enabled
 **              OnBusStopDetected                          : Disabled
 **          CPU clock/configuration selection              : 
 **            Clock configuration 0                        : This component enabled
@@ -178,6 +178,7 @@ extern "C" {
 /* Events configuration constants - generated for all enabled component's events */
 #define CI2C1_OnMasterBlockSent_EVENT_ENABLED /*!< OnMasterBlockSent event of the component CI2C1 is enabled (generated) */
 #define CI2C1_OnMasterBlockReceived_EVENT_ENABLED /*!< OnMasterBlockReceived event of the component CI2C1 is enabled (generated) */
+#define CI2C1_OnError_EVENT_ENABLED    /*!< OnError event of the component CI2C1 is enabled (generated) */
 
 
 

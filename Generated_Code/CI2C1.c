@@ -7,7 +7,7 @@
 **     Version     : Component 01.016, Driver 01.07, CPU db: 3.00.000
 **     Repository  : Kinetis
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2020-07-26, 21:44, # CodeGen: 2
+**     Date/Time   : 2020-07-27, 09:16, # CodeGen: 12
 **     Abstract    :
 **          This component encapsulates the internal I2C communication
 **          interface. The implementation of the interface is based
@@ -71,7 +71,7 @@
 **              OnSlaveGeneralCallAddr                     : Disabled
 **              OnSlaveSmBusCallAddr                       : Disabled
 **              OnSlaveSmBusAlertResponse                  : Disabled
-**              OnError                                    : Disabled
+**              OnError                                    : Enabled
 **              OnBusStopDetected                          : Disabled
 **          CPU clock/configuration selection              : 
 **            Clock configuration 0                        : This component enabled
@@ -186,7 +186,7 @@ static CI2C1_TDeviceData DeviceDataPrv__DEFAULT_RTOS_ALLOC;
 /* {Default RTOS Adapter} Global variable used for passing a parameter into ISR */
 static CI2C1_TDeviceDataPtr INT_I2C0__DEFAULT_RTOS_ISRPARAM;
 
-#define AVAILABLE_EVENTS_MASK (LDD_I2C_ON_MASTER_BLOCK_SENT | LDD_I2C_ON_MASTER_BLOCK_RECEIVED)
+#define AVAILABLE_EVENTS_MASK (LDD_I2C_ON_MASTER_BLOCK_SENT | LDD_I2C_ON_MASTER_BLOCK_RECEIVED | LDD_I2C_ON_ERROR)
 
 /*
 ** ===================================================================
@@ -203,6 +203,7 @@ PE_ISR(CI2C1_Interrupt)
 {
   /* {Default RTOS Adapter} ISR parameter is passed through the global variable */
   CI2C1_TDeviceDataPtr DeviceDataPrv = INT_I2C0__DEFAULT_RTOS_ISRPARAM;
+  LDD_I2C_TErrorMask ErrorMask = 0x00U; /* Temporary variable for error mask */
   register uint8_t Status;             /* Temporary variable for status register */
 
   Status = I2C_PDD_ReadStatusReg(I2C0_BASE_PTR); /* Safe status register */
@@ -215,6 +216,7 @@ PE_ISR(CI2C1_Interrupt)
         DeviceDataPrv->OutLenM = 0x00U; /* No character for sending */
         DeviceDataPrv->InpLenM = 0x00U; /* No character for reception */
         DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* No character for sending or reception */
+        ErrorMask |= LDD_I2C_MASTER_NACK; /* Set the Master Nack error mask */
       } else {
         if (DeviceDataPrv->OutLenM != 0x00U) { /* Is any char. for transmitting? */
           DeviceDataPrv->OutLenM--;    /* Decrease number of chars for the transmit */
@@ -263,7 +265,11 @@ PE_ISR(CI2C1_Interrupt)
       DeviceDataPrv->SendStop = LDD_I2C_SEND_STOP; /* Set variable for sending stop condition (for master mode) */
       DeviceDataPrv->SerFlag &= (uint8_t)~(MASTER_IN_PROGRES); /* Any character is not for sent or reception*/
       I2C_PDD_SetTransmitMode(I2C0_BASE_PTR, I2C_PDD_RX_DIRECTION); /* Switch to Rx mode */
+      ErrorMask |= LDD_I2C_ARBIT_LOST; /* Set the ArbitLost error mask */
     }
+  }
+  if (ErrorMask != 0x00U) {            /* Is any error mask set? */
+    CI2C1_OnError(DeviceDataPrv->UserData); /* If yes then invoke user event */
   }
 }
 

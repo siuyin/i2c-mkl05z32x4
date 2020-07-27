@@ -559,7 +559,7 @@ registers of the peripheral(s) configured by the component.
 **              OnSlaveGeneralCallAddr                     : Disabled
 **              OnSlaveSmBusCallAddr                       : Disabled
 **              OnSlaveSmBusAlertResponse                  : Disabled
-**              OnError                                    : Disabled
+**              OnError                                    : Enabled
 **              OnBusStopDetected                          : Disabled
 **          CPU clock/configuration selection              : 
 **            Clock configuration 0                        : This component enabled

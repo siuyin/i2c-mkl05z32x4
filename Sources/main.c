@@ -32,14 +32,17 @@
 #include "CI2C1.h"
 #include "Bit1.h"
 #include "SysTick.h"
+#include "AS1.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"
 #include "PE_Const.h"
 #include "IO_Map.h"
 /* User includes (#include below this line is not maintained by Processor Expert) */
+#include <stdio.h>
+#include <string.h>
 
-LDD_TDeviceData* i2c;	// i2c logical device pointer.
+LDD_TDeviceData* uart0;
 
 // ActivateMMA8451QAccelerometer commands the device into active mode.
 // Returns 0 if successful.
@@ -50,23 +53,36 @@ uint8_t ActivateMMA8451QAccelerometer(void) {
 	return CI2C1_MasterSendBlock(i2c, cmd, 2, LDD_I2C_SEND_STOP);
 }
 
-int8_t AccelerometerData;
 // ReadAccelerometerTask periodically reads the accelerometer and output the value.
 void ReadAccelerometerTask(void) {
+	static unsigned int nrt;	// next run tick
+	if (tick != nrt) {
+		return;
+	}
+	nrt += 100;	// update every x ticks.
+
+	uint8_t reg = 0x5;	// z-axis most significant byte
+	CI2C1_MasterSendBlock(i2c, &reg, 1, LDD_I2C_NO_SEND_STOP);
+	while (!CI2C1_MasterGetBlockSentStatus(i2c)) { // wait for data to be sent
+	}
+	CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1, LDD_I2C_SEND_STOP);
+}
+void ReadAccelerometerTaskOld(void) {
 	static unsigned int nrt;	// next run tick
 	enum stateT {
 		ready, txBusy, txSent, rxBusy
 	};
 	// these are with respect to the i2c master.
 	static enum stateT state;
-	uint8_t reg;
+	static uint8_t reg;
+	LDD_TError err;
 
 	switch (state) {
 	case ready:
-		if (tick != nrt) {
-			return;
-		}
-		nrt += 200;	// update every x ticks.
+//		if (tick != nrt) {
+//			return;
+//		}
+//		nrt += 100;	// update every x ticks.
 
 		reg = 0x5;	// z-axis most significant byte
 		CI2C1_MasterSendBlock(i2c, &reg, 1, LDD_I2C_NO_SEND_STOP);
@@ -75,19 +91,36 @@ void ReadAccelerometerTask(void) {
 	case txBusy:
 		if (CI2C1_MasterGetBlockSentStatus(i2c)) { // All data sent
 			state = txSent;
+		} else {
+			state = txBusy;
 		}
 		break;
 	case txSent:
-		CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1, LDD_I2C_SEND_STOP);
+		err = CI2C1_MasterReceiveBlock(i2c, &AccelerometerData, 1,
+				LDD_I2C_SEND_STOP);
 		state = rxBusy;
 		break;
 	case rxBusy:
 		if (CI2C1_MasterGetBlockReceivedStatus(i2c)) {	// all data received
 			state = ready;
+		} else {
+			state = rxBusy;
 		}
 		break;
 	}
 	return;
+}
+
+void OutputSerialTask(void) {
+	static unsigned int nrt;
+	if (tick != nrt) {
+		return;
+	}
+	nrt += 300;
+
+	static char buf[40];
+	snprintf(buf, 39, "z-axis: %d\r\n", AccelerometerData);
+	AS1_SendBlock(uart0, buf, strlen(buf));
 }
 
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
@@ -104,22 +137,27 @@ int main(void)
 
 	redLED = Bit1_Init(NULL);
 	i2c = CI2C1_Init(NULL);
+	uart0 = AS1_Init(NULL);
 
 	ActivateMMA8451QAccelerometer();
 
 	while (1) {
+
 		ReadAccelerometerTask();
+		OutputSerialTask();
+
 	}
 
 	/*** Don't write any code pass this line, or it will be deleted during code generation. ***/
-  /*** RTOS startup code. Macro PEX_RTOS_START is defined by the RTOS component. DON'T MODIFY THIS CODE!!! ***/
-  #ifdef PEX_RTOS_START
-    PEX_RTOS_START();                  /* Startup of the selected RTOS. Macro is defined by the RTOS component. */
-  #endif
-  /*** End of RTOS startup code.  ***/
-  /*** Processor Expert end of main routine. DON'T MODIFY THIS CODE!!! ***/
-  for(;;){}
-  /*** Processor Expert end of main routine. DON'T WRITE CODE BELOW!!! ***/
+	/*** RTOS startup code. Macro PEX_RTOS_START is defined by the RTOS component. DON'T MODIFY THIS CODE!!! ***/
+#ifdef PEX_RTOS_START
+	PEX_RTOS_START(); /* Startup of the selected RTOS. Macro is defined by the RTOS component. */
+#endif
+	/*** End of RTOS startup code.  ***/
+	/*** Processor Expert end of main routine. DON'T MODIFY THIS CODE!!! ***/
+	for (;;) {
+	}
+	/*** Processor Expert end of main routine. DON'T WRITE CODE BELOW!!! ***/
 } /*** End of main routine. DO NOT MODIFY THIS TEXT!!! ***/
 
 /* END main */
