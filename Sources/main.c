@@ -73,7 +73,7 @@ void OutputSerialTask(void) {
 	if (tick != nrt) {
 		return;
 	}
-	nrt += 300;
+	nrt += 500;
 
 	static char buf[40];
 	snprintf(buf, 39, "(%+4d,%+4d,%+4d)\r\n", AccelerometerData.X,
