@@ -46,11 +46,11 @@ LDD_TDeviceData* uart0;
 
 // ActivateMMA8451QAccelerometer commands the device into active mode.
 // Returns 0 if successful.
-uint8_t ActivateMMA8451QAccelerometer(void) {
+void ActivateMMA8451QAccelerometer(void) {
 	const uint8_t addr = 0x1d; // only for documentation, this has already been defined in the Processor Expert Logical Device Driver.
 	uint8_t cmd[2] = { 0x2a, 0x3 }; // 0x2a is the control register, 3 is to switch to active mode and enable fast-read byte only transfers for x,y and z registers.
 
-	return CI2C1_MasterSendBlock(i2c, cmd, 2, LDD_I2C_SEND_STOP);
+	CI2C1_MasterSendBlock(i2c, cmd, 2, LDD_I2C_SEND_STOP);
 }
 
 // ReadAccelerometerTask periodically reads the accelerometer and output the value.
